@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const {errorHandler} = require('./src/middleware/errorHandler');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocs = require('./src/config/swagger');
 
 const app = express();
 
@@ -18,6 +20,11 @@ app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
 });
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: "Web Store API Documentation"
+}));
 
 const authRoutes = require("./src/routes/authRoutes");
 const productRoutes = require("./src/routes/productRoutes");
@@ -53,6 +60,7 @@ app.get("/", (req, res) => {
         success: true,
         message: "Welcome to Web Store API",
         version: "1.0.0",
+        documentation: `${req.protocol}://${req.get('host')}/api-docs`,
         endpoints: {
             v1: "/api/v1",
             auth: "/api/v1/auth",
@@ -82,6 +90,7 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`\n🚀 Server is running on port ${PORT}`);
+    console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
 });
 
 module.exports = app;
