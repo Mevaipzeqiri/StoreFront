@@ -2,8 +2,7 @@ const { Pool } = require("pg");
 const types = require("pg").types;
 require("dotenv").config();
 
-// ✅ FIX: Parse DECIMAL/NUMERIC columns as numbers instead of strings
-types.setTypeParser(1700, (val) => parseFloat(val)); // NUMERIC/DECIMAL type
+types.setTypeParser(1700, (val) => parseFloat(val));
 
 const pool = new Pool({
   host: process.env.DB_HOST,
