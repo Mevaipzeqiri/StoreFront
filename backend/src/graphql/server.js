@@ -1,5 +1,4 @@
 const {ApolloServer} = require('@apollo/server');
-const {expressMiddleware} = require('@apollo/server/express4');
 const {ApolloServerPluginDrainHttpServer} = require('@apollo/server/plugin/drainHttpServer');
 const {makeExecutableSchema} = require('@graphql-tools/schema');
 const {WebSocketServer} = require('ws');
@@ -8,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const typeDefs = require('./schema');
 const resolvers = require('./resolvers');
+const { GraphQLCustomError } = require('./errors');
 
 const getUser = async (token) => {
     if (!token) return null;
@@ -34,16 +34,13 @@ const getUser = async (token) => {
 };
 
 const createApolloServer = async (httpServer) => {
-    // Create schema
     const schema = makeExecutableSchema({typeDefs, resolvers});
 
-    // Create WebSocket server for subscriptions
     const wsServer = new WebSocketServer({
         server: httpServer,
         path: '/graphql',
     });
 
-    // Set up WebSocket server
     const serverCleanup = useServer(
         {
             schema,
@@ -56,7 +53,6 @@ const createApolloServer = async (httpServer) => {
         wsServer
     );
 
-    // Create Apollo Server
     const server = new ApolloServer({
         schema,
         plugins: [
@@ -71,12 +67,44 @@ const createApolloServer = async (httpServer) => {
                 },
             },
         ],
-        formatError: (error) => {
-            console.error('GraphQL Error:', error);
+        formatError: (formattedError, error) => {
+            console.error('GraphQL Error:', {
+                message: formattedError.message,
+                code: formattedError.extensions?.code,
+                path: formattedError.path,
+                locations: formattedError.locations
+            });
+
+            if (error.originalError instanceof GraphQLCustomError) {
+                return {
+                    message: formattedError.message,
+                    extensions: {
+                        code: formattedError.extensions.code,
+                        statusCode: formattedError.extensions.statusCode,
+                        ...formattedError.extensions,
+                        ...(process.env.NODE_ENV === 'development' && {
+                            stacktrace: formattedError.extensions.stacktrace
+                        })
+                    },
+                    locations: formattedError.locations,
+                    path: formattedError.path
+                };
+            }
+
             return {
-                message: error.message,
-                locations: error.locations,
-                path: error.path,
+                message: process.env.NODE_ENV === 'development'
+                    ? formattedError.message
+                    : 'An unexpected error occurred',
+                extensions: {
+                    code: 'INTERNAL_SERVER_ERROR',
+                    statusCode: 500,
+                    ...(process.env.NODE_ENV === 'development' && {
+                        originalError: formattedError.message,
+                        stacktrace: formattedError.extensions?.stacktrace
+                    })
+                },
+                locations: formattedError.locations,
+                path: formattedError.path
             };
         },
     });
