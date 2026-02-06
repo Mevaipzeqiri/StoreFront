@@ -1,14 +1,20 @@
-// src/controllers/userController.js
 const userService = require("../services/userService");
+const {addHATEOAS, userLinks, paginationLinks} = require("../utils/hateoas");
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const {page = 1, limit = 10} = req.query;
         const result = await userService.getAllUsers(page, limit);
+
+        const usersWithLinks = result.data.map(user =>
+            addHATEOAS(user, userLinks(req, user.id))
+        );
 
         res.json({
             success: true,
-            ...result,
+            data: usersWithLinks,
+            pagination: result.pagination,
+            _links: paginationLinks(req, page, limit, result.pagination.total)
         });
     } catch (error) {
         console.error("Get all users error:", error);
@@ -40,12 +46,12 @@ exports.getAllRoles = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await userService.getUserById(id);
 
         res.json({
             success: true,
-            data,
+            data: addHATEOAS(data, userLinks(req, id))
         });
     } catch (error) {
         console.error("Get user by ID error:", error);
@@ -59,13 +65,13 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     try {
-        const { username, email, password, role } = req.body;
+        const {username, email, password, role} = req.body;
         const data = await userService.createUser(username, email, password, role);
 
         res.status(201).json({
             success: true,
             message: "User created successfully",
-            data,
+            data: addHATEOAS(data, userLinks(req, data.id))
         });
     } catch (error) {
         console.error("Create user error:", error);
@@ -79,14 +85,14 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { username, email, role } = req.body;
+        const {id} = req.params;
+        const {username, email, role} = req.body;
         const data = await userService.updateUser(id, username, email, role);
 
         res.json({
             success: true,
             message: "User updated successfully",
-            data,
+            data: addHATEOAS(data, userLinks(req, id))
         });
     } catch (error) {
         console.error("Update user error:", error);
@@ -100,8 +106,8 @@ exports.updateUser = async (req, res) => {
 
 exports.resetUserPassword = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { new_password } = req.body;
+        const {id} = req.params;
+        const {new_password} = req.body;
         await userService.resetUserPassword(id, new_password);
 
         res.json({
@@ -120,7 +126,7 @@ exports.resetUserPassword = async (req, res) => {
 
 exports.toggleUserStatus = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await userService.toggleUserStatus(id, req.user.id);
 
         res.json({
@@ -128,7 +134,7 @@ exports.toggleUserStatus = async (req, res) => {
             message: `User ${
                 data.is_active ? "activated" : "deactivated"
             } successfully`,
-            data,
+            data: addHATEOAS(data, userLinks(req, id))
         });
     } catch (error) {
         console.error("Toggle user status error:", error);
@@ -142,7 +148,7 @@ exports.toggleUserStatus = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await userService.deleteUser(id, req.user.id);
 
         res.json({

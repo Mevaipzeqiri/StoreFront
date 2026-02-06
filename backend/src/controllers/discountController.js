@@ -1,18 +1,24 @@
-// src/controllers/discountController.js
 const discountService = require("../services/discountService");
+const {addHATEOAS, discountLinks, paginationLinks} = require("../utils/hateoas");
 
 exports.getAllDiscounts = async (req, res) => {
     try {
-        const { is_active, page = 1, limit = 10 } = req.query;
+        const {is_active, page = 1, limit = 10} = req.query;
         const result = await discountService.getAllDiscounts(
             is_active,
             page,
             limit
         );
 
+        const discountsWithLinks = result.data.map(discount =>
+            addHATEOAS(discount, discountLinks(req, discount.id))
+        );
+
         res.json({
             success: true,
-            ...result,
+            data: discountsWithLinks,
+            pagination: result.pagination,
+            _links: paginationLinks(req, page, limit, result.pagination.total)
         });
     } catch (error) {
         console.error("Get all discounts error:", error);
@@ -26,12 +32,12 @@ exports.getAllDiscounts = async (req, res) => {
 
 exports.getDiscountById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await discountService.getDiscountById(id);
 
         res.json({
             success: true,
-            data,
+            data: addHATEOAS(data, discountLinks(req, id))
         });
     } catch (error) {
         console.error("Get discount by ID error:", error);
@@ -45,16 +51,20 @@ exports.getDiscountById = async (req, res) => {
 
 exports.getProductDiscounts = async (req, res) => {
     try {
-        const { productId } = req.params;
-        const { is_active } = req.query;
+        const {productId} = req.params;
+        const {is_active} = req.query;
         const data = await discountService.getProductDiscounts(
             productId,
             is_active
         );
 
+        const discountsWithLinks = data.map(discount =>
+            addHATEOAS(discount, discountLinks(req, discount.id))
+        );
+
         res.json({
             success: true,
-            data,
+            data: discountsWithLinks
         });
     } catch (error) {
         console.error("Get product discounts error:", error);
@@ -73,7 +83,7 @@ exports.applyDiscount = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Discount applied successfully",
-            data,
+            data: addHATEOAS(data, discountLinks(req, data.id))
         });
     } catch (error) {
         console.error("Apply discount error:", error);
@@ -87,13 +97,13 @@ exports.applyDiscount = async (req, res) => {
 
 exports.updateDiscount = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await discountService.updateDiscount(id, req.body);
 
         res.json({
             success: true,
             message: "Discount updated successfully",
-            data,
+            data: addHATEOAS(data, discountLinks(req, id))
         });
     } catch (error) {
         console.error("Update discount error:", error);
@@ -107,13 +117,13 @@ exports.updateDiscount = async (req, res) => {
 
 exports.deactivateDiscount = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await discountService.deactivateDiscount(id);
 
         res.json({
             success: true,
             message: "Discount deactivated successfully",
-            data,
+            data: addHATEOAS(data, discountLinks(req, id))
         });
     } catch (error) {
         console.error("Deactivate discount error:", error);
@@ -127,7 +137,7 @@ exports.deactivateDiscount = async (req, res) => {
 
 exports.deleteDiscount = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await discountService.deleteDiscount(id);
 
         res.json({

@@ -1,14 +1,20 @@
-// src/controllers/productController.js
 const productService = require("../services/productService");
+const {addHATEOAS, productLinks, paginationLinks} = require("../utils/hateoas");
 
 exports.getAllProducts = async (req, res) => {
     try {
-        const { page = 1, limit = 10, is_active } = req.query;
+        const {page = 1, limit = 10, is_active} = req.query;
         const result = await productService.getAllProducts(is_active, page, limit);
+
+        const productsWithLinks = result.data.map(product =>
+            addHATEOAS(product, productLinks(req, product.id))
+        );
 
         res.json({
             success: true,
-            ...result,
+            data: productsWithLinks,
+            pagination: result.pagination,
+            _links: paginationLinks(req, page, limit, result.pagination.total)
         });
     } catch (error) {
         console.error("Get all products error:", error);
@@ -22,12 +28,19 @@ exports.getAllProducts = async (req, res) => {
 
 exports.searchProducts = async (req, res) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const {page = 1, limit = 10} = req.query;
         const result = await productService.searchProducts(req.query, page, limit);
+
+        const productsWithLinks = result.data.map(product =>
+            addHATEOAS(product, productLinks(req, product.id))
+        );
 
         res.json({
             success: true,
-            ...result,
+            data: productsWithLinks,
+            filters: result.filters,
+            pagination: result.pagination,
+            _links: paginationLinks(req, page, limit, result.pagination.total)
         });
     } catch (error) {
         console.error("Search products error:", error);
@@ -41,12 +54,12 @@ exports.searchProducts = async (req, res) => {
 
 exports.getProductById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await productService.getProductById(id);
 
         res.json({
             success: true,
-            data,
+            data: addHATEOAS(data, productLinks(req, id))
         });
     } catch (error) {
         console.error("Get product by ID error:", error);
@@ -60,12 +73,12 @@ exports.getProductById = async (req, res) => {
 
 exports.getProductQuantity = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await productService.getProductQuantity(id);
 
         res.json({
             success: true,
-            data,
+            data: addHATEOAS(data, productLinks(req, id))
         });
     } catch (error) {
         console.error("Get product quantity error:", error);
@@ -84,7 +97,7 @@ exports.createProduct = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Product created successfully",
-            data,
+            data: addHATEOAS(data, productLinks(req, data.id))
         });
     } catch (error) {
         console.error("Create product error:", error);
@@ -98,13 +111,13 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await productService.updateProduct(id, req.body);
 
         res.json({
             success: true,
             message: "Product updated successfully",
-            data,
+            data: addHATEOAS(data, productLinks(req, id))
         });
     } catch (error) {
         console.error("Update product error:", error);
@@ -118,14 +131,14 @@ exports.updateProduct = async (req, res) => {
 
 exports.updateProductStock = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { quantity } = req.body;
+        const {id} = req.params;
+        const {quantity} = req.body;
         const data = await productService.updateProductStock(id, quantity);
 
         res.json({
             success: true,
             message: "Product stock updated successfully",
-            data,
+            data: addHATEOAS(data, productLinks(req, id))
         });
     } catch (error) {
         console.error("Update product stock error:", error);
@@ -139,7 +152,7 @@ exports.updateProductStock = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await productService.deleteProduct(id);
 
         res.json({

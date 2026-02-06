@@ -1,14 +1,20 @@
-// src/controllers/clientController.js
 const clientService = require("../services/clientService");
+const {addHATEOAS, clientLinks, paginationLinks} = require("../utils/hateoas");
 
 exports.getAllClients = async (req, res) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const {page = 1, limit = 10} = req.query;
         const result = await clientService.getAllClients(page, limit);
+
+        const clientsWithLinks = result.data.map(client =>
+            addHATEOAS(client, clientLinks(req, client.id))
+        );
 
         res.json({
             success: true,
-            ...result,
+            data: clientsWithLinks,
+            pagination: result.pagination,
+            _links: paginationLinks(req, page, limit, result.pagination.total)
         });
     } catch (error) {
         console.error("Get all clients error:", error);
@@ -22,12 +28,18 @@ exports.getAllClients = async (req, res) => {
 
 exports.searchClients = async (req, res) => {
     try {
-        const { query, page = 1, limit = 10 } = req.query;
+        const {query, page = 1, limit = 10} = req.query;
         const result = await clientService.searchClients(query, page, limit);
+
+        const clientsWithLinks = result.data.map(client =>
+            addHATEOAS(client, clientLinks(req, client.id))
+        );
 
         res.json({
             success: true,
-            ...result,
+            data: clientsWithLinks,
+            pagination: result.pagination,
+            _links: paginationLinks(req, page, limit, result.pagination.total)
         });
     } catch (error) {
         console.error("Search clients error:", error);
@@ -41,12 +53,12 @@ exports.searchClients = async (req, res) => {
 
 exports.getClientById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await clientService.getClientById(id);
 
         res.json({
             success: true,
-            data,
+            data: addHATEOAS(data, clientLinks(req, id))
         });
     } catch (error) {
         console.error("Get client by ID error:", error);
@@ -65,7 +77,7 @@ exports.createClient = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Client created successfully",
-            data,
+            data: addHATEOAS(data, clientLinks(req, data.id))
         });
     } catch (error) {
         console.error("Create client error:", error);
@@ -79,13 +91,13 @@ exports.createClient = async (req, res) => {
 
 exports.updateClient = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         const data = await clientService.updateClient(id, req.body);
 
         res.json({
             success: true,
             message: "Client updated successfully",
-            data,
+            data: addHATEOAS(data, clientLinks(req, id))
         });
     } catch (error) {
         console.error("Update client error:", error);
@@ -99,7 +111,7 @@ exports.updateClient = async (req, res) => {
 
 exports.deleteClient = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await clientService.deleteClient(id);
 
         res.json({

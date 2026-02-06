@@ -1,14 +1,21 @@
-// src/controllers/referenceDataController.js
 const refDataService = require("../services/referenceDataService");
+
+const getBaseUrl = (req) => `${req.protocol}://${req.get('host')}`;
 
 // ============ CATEGORIES ============
 
 exports.getAllCategories = async (req, res) => {
     try {
         const data = await refDataService.getAllCategories();
+        const baseUrl = getBaseUrl(req);
+
         res.json({
             success: true,
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/categories`, method: 'GET'},
+                create: {href: `${baseUrl}/api/v1/reference/categories`, method: 'POST'}
+            }
         });
     } catch (error) {
         console.error("Get categories error:", error);
@@ -22,13 +29,20 @@ exports.getAllCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const {name, description} = req.body;
         const data = await refDataService.createCategory(name, description);
+        const baseUrl = getBaseUrl(req);
 
         res.status(201).json({
             success: true,
             message: "Category created successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/categories/${data.id}`, method: 'GET'},
+                update: {href: `${baseUrl}/api/v1/reference/categories/${data.id}`, method: 'PUT'},
+                delete: {href: `${baseUrl}/api/v1/reference/categories/${data.id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/categories`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -48,14 +62,20 @@ exports.createCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, description } = req.body;
+        const {id} = req.params;
+        const {name, description} = req.body;
         const data = await refDataService.updateCategory(id, name, description);
+        const baseUrl = getBaseUrl(req);
 
         res.json({
             success: true,
             message: "Category updated successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/categories/${id}`, method: 'GET'},
+                delete: {href: `${baseUrl}/api/v1/reference/categories/${id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/categories`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -75,7 +95,7 @@ exports.updateCategory = async (req, res) => {
 
 exports.deleteCategory = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await refDataService.deleteCategory(id);
 
         res.json({
@@ -97,9 +117,15 @@ exports.deleteCategory = async (req, res) => {
 exports.getAllBrands = async (req, res) => {
     try {
         const data = await refDataService.getAllBrands();
+        const baseUrl = getBaseUrl(req);
+
         res.json({
             success: true,
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/brands`, method: 'GET'},
+                create: {href: `${baseUrl}/api/v1/reference/brands`, method: 'POST'}
+            }
         });
     } catch (error) {
         console.error("Get brands error:", error);
@@ -113,13 +139,20 @@ exports.getAllBrands = async (req, res) => {
 
 exports.createBrand = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const {name, description} = req.body;
         const data = await refDataService.createBrand(name, description);
+        const baseUrl = getBaseUrl(req);
 
         res.status(201).json({
             success: true,
             message: "Brand created successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/brands/${data.id}`, method: 'GET'},
+                update: {href: `${baseUrl}/api/v1/reference/brands/${data.id}`, method: 'PUT'},
+                delete: {href: `${baseUrl}/api/v1/reference/brands/${data.id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/brands`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -139,14 +172,20 @@ exports.createBrand = async (req, res) => {
 
 exports.updateBrand = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, description } = req.body;
+        const {id} = req.params;
+        const {name, description} = req.body;
         const data = await refDataService.updateBrand(id, name, description);
+        const baseUrl = getBaseUrl(req);
 
         res.json({
             success: true,
             message: "Brand updated successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/brands/${id}`, method: 'GET'},
+                delete: {href: `${baseUrl}/api/v1/reference/brands/${id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/brands`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -166,7 +205,7 @@ exports.updateBrand = async (req, res) => {
 
 exports.deleteBrand = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await refDataService.deleteBrand(id);
 
         res.json({
@@ -188,9 +227,15 @@ exports.deleteBrand = async (req, res) => {
 exports.getAllColors = async (req, res) => {
     try {
         const data = await refDataService.getAllColors();
+        const baseUrl = getBaseUrl(req);
+
         res.json({
             success: true,
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/colors`, method: 'GET'},
+                create: {href: `${baseUrl}/api/v1/reference/colors`, method: 'POST'}
+            }
         });
     } catch (error) {
         console.error("Get colors error:", error);
@@ -204,13 +249,20 @@ exports.getAllColors = async (req, res) => {
 
 exports.createColor = async (req, res) => {
     try {
-        const { name, hex_code } = req.body;
+        const {name, hex_code} = req.body;
         const data = await refDataService.createColor(name, hex_code);
+        const baseUrl = getBaseUrl(req);
 
         res.status(201).json({
             success: true,
             message: "Color created successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/colors/${data.id}`, method: 'GET'},
+                update: {href: `${baseUrl}/api/v1/reference/colors/${data.id}`, method: 'PUT'},
+                delete: {href: `${baseUrl}/api/v1/reference/colors/${data.id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/colors`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -230,14 +282,20 @@ exports.createColor = async (req, res) => {
 
 exports.updateColor = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, hex_code } = req.body;
+        const {id} = req.params;
+        const {name, hex_code} = req.body;
         const data = await refDataService.updateColor(id, name, hex_code);
+        const baseUrl = getBaseUrl(req);
 
         res.json({
             success: true,
             message: "Color updated successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/colors/${id}`, method: 'GET'},
+                delete: {href: `${baseUrl}/api/v1/reference/colors/${id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/colors`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -257,7 +315,7 @@ exports.updateColor = async (req, res) => {
 
 exports.deleteColor = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await refDataService.deleteColor(id);
 
         res.json({
@@ -279,9 +337,15 @@ exports.deleteColor = async (req, res) => {
 exports.getAllSizes = async (req, res) => {
     try {
         const data = await refDataService.getAllSizes();
+        const baseUrl = getBaseUrl(req);
+
         res.json({
             success: true,
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/sizes`, method: 'GET'},
+                create: {href: `${baseUrl}/api/v1/reference/sizes`, method: 'POST'}
+            }
         });
     } catch (error) {
         console.error("Get sizes error:", error);
@@ -295,13 +359,20 @@ exports.getAllSizes = async (req, res) => {
 
 exports.createSize = async (req, res) => {
     try {
-        const { name, description, sort_order } = req.body;
+        const {name, description, sort_order} = req.body;
         const data = await refDataService.createSize(name, description, sort_order);
+        const baseUrl = getBaseUrl(req);
 
         res.status(201).json({
             success: true,
             message: "Size created successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/sizes/${data.id}`, method: 'GET'},
+                update: {href: `${baseUrl}/api/v1/reference/sizes/${data.id}`, method: 'PUT'},
+                delete: {href: `${baseUrl}/api/v1/reference/sizes/${data.id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/sizes`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -321,19 +392,25 @@ exports.createSize = async (req, res) => {
 
 exports.updateSize = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, description, sort_order } = req.body;
+        const {id} = req.params;
+        const {name, description, sort_order} = req.body;
         const data = await refDataService.updateSize(
             id,
             name,
             description,
             sort_order
         );
+        const baseUrl = getBaseUrl(req);
 
         res.json({
             success: true,
             message: "Size updated successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/sizes/${id}`, method: 'GET'},
+                delete: {href: `${baseUrl}/api/v1/reference/sizes/${id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/sizes`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -353,7 +430,7 @@ exports.updateSize = async (req, res) => {
 
 exports.deleteSize = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await refDataService.deleteSize(id);
 
         res.json({
@@ -375,9 +452,15 @@ exports.deleteSize = async (req, res) => {
 exports.getAllGenders = async (req, res) => {
     try {
         const data = await refDataService.getAllGenders();
+        const baseUrl = getBaseUrl(req);
+
         res.json({
             success: true,
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/genders`, method: 'GET'},
+                create: {href: `${baseUrl}/api/v1/reference/genders`, method: 'POST'}
+            }
         });
     } catch (error) {
         console.error("Get genders error:", error);
@@ -391,13 +474,20 @@ exports.getAllGenders = async (req, res) => {
 
 exports.createGender = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const {name, description} = req.body;
         const data = await refDataService.createGender(name, description);
+        const baseUrl = getBaseUrl(req);
 
         res.status(201).json({
             success: true,
             message: "Gender created successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/genders/${data.id}`, method: 'GET'},
+                update: {href: `${baseUrl}/api/v1/reference/genders/${data.id}`, method: 'PUT'},
+                delete: {href: `${baseUrl}/api/v1/reference/genders/${data.id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/genders`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -417,14 +507,20 @@ exports.createGender = async (req, res) => {
 
 exports.updateGender = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, description } = req.body;
+        const {id} = req.params;
+        const {name, description} = req.body;
         const data = await refDataService.updateGender(id, name, description);
+        const baseUrl = getBaseUrl(req);
 
         res.json({
             success: true,
             message: "Gender updated successfully",
             data,
+            _links: {
+                self: {href: `${baseUrl}/api/v1/reference/genders/${id}`, method: 'GET'},
+                delete: {href: `${baseUrl}/api/v1/reference/genders/${id}`, method: 'DELETE'},
+                all: {href: `${baseUrl}/api/v1/reference/genders`, method: 'GET'}
+            }
         });
     } catch (error) {
         if (error.code === "23505") {
@@ -444,7 +540,7 @@ exports.updateGender = async (req, res) => {
 
 exports.deleteGender = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {id} = req.params;
         await refDataService.deleteGender(id);
 
         res.json({
