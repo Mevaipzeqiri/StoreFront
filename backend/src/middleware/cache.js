@@ -1,26 +1,30 @@
-const {getRedisClient} = require('../config/redis');
+const { getRedisClient } = require('../config/redis');
+const logger = require('../config/logger');
+const { cacheHits, cacheMisses } = require('../config/metrics');
 
 const cache = (duration = 300) => {
     return async (req, res, next) => {
-        const redisClient = getRedisClient();
-
-        if (!redisClient || !redisClient.isOpen) {
-            console.log('⚠️  Redis not available, skipping cache');
-            return next();
-        }
-
         if (req.method !== 'GET') {
             return next();
         }
 
-        const key = `cache:${req.originalUrl || req.url}`;
+        const redis = getRedisClient();
+
+        if (!redis || !redis.isOpen) {
+            logger.warn('Redis not available, skipping cache');
+            return next();
+        }
+
+        const key = `cache:${req.originalUrl}`;
 
         try {
-            const cachedData = await redisClient.get(key);
+            const cachedResponse = await redis.get(key);
 
-            if (cachedData) {
-                console.log(`🎯 Cache HIT: ${key}`);
-                const data = JSON.parse(cachedData);
+            if (cachedResponse) {
+                logger.debug('Cache HIT', { key });
+                cacheHits.labels(key).inc();
+
+                const data = JSON.parse(cachedResponse);
                 return res.json({
                     ...data,
                     _cached: true,
@@ -29,72 +33,62 @@ const cache = (duration = 300) => {
                 });
             }
 
-            console.log(`❌ Cache MISS: ${key}`);
+            logger.debug('Cache MISS', { key });
+            cacheMisses.labels(key).inc();
 
             const originalJson = res.json.bind(res);
 
-            res.json = (data) => {
-                res.json = originalJson;
+            res.json = (body) => {
+                redis.setEx(key, duration, JSON.stringify(body))
+                    .then(() => logger.debug('Cache SET', { key, duration }))
+                    .catch(err => logger.error('Cache SET failed', { key, error: err.message }));
 
-                if (res.statusCode === 200 && data.success !== false) {
-                    redisClient.setEx(key, duration, JSON.stringify(data))
-                        .then(() => console.log(`💾 Cached: ${key} (TTL: ${duration}s)`))
-                        .catch(err => console.error('Cache set error:', err));
-                }
-
-                return res.json(data);
+                return originalJson(body);
             };
 
             next();
         } catch (error) {
-            console.error('❌ Cache middleware error:', error);
+            logger.error('Cache middleware error', { key, error: error.message });
             next();
         }
     };
 };
 
 const clearCache = async (pattern = '*') => {
-    const redisClient = getRedisClient();
+    const redis = getRedisClient();
 
-    if (!redisClient || !redisClient.isOpen) {
-        console.log('⚠️  Redis not available');
-        return {cleared: 0};
+    if (!redis || !redis.isOpen) {
+        throw new Error('Redis not connected');
     }
 
     try {
-        const keys = await redisClient.keys(`cache:${pattern}`);
-
+        const keys = await redis.keys(`cache:${pattern}`);
         if (keys.length > 0) {
-            await redisClient.del(keys);
-            console.log(`🗑️  Cleared ${keys.length} cache entries matching: ${pattern}`);
-            return {cleared: keys.length, keys};
+            await redis.del(keys);
+            logger.info('Cache cleared', { pattern, count: keys.length });
         }
-
-        return {cleared: 0, message: 'No matching keys found'};
+        return keys.length;
     } catch (error) {
-        console.error('❌ Clear cache error:', error);
-        return {error: error.message};
+        logger.error('Clear cache failed', { pattern, error: error.message });
+        throw error;
     }
 };
 
 const clearCacheKey = async (key) => {
-    const redisClient = getRedisClient();
+    const redis = getRedisClient();
 
-    if (!redisClient || !redisClient.isOpen) {
-        return {cleared: false};
+    if (!redis || !redis.isOpen) {
+        throw new Error('Redis not connected');
     }
 
     try {
-        const result = await redisClient.del(`cache:${key}`);
-        return {cleared: result > 0};
+        const fullKey = key.startsWith('cache:') ? key : `cache:${key}`;
+        await redis.del(fullKey);
+        logger.info('Cache key cleared', { key: fullKey });
     } catch (error) {
-        console.error('❌ Clear cache key error:', error);
-        return {cleared: false, error: error.message};
+        logger.error('Clear cache key failed', { key, error: error.message });
+        throw error;
     }
 };
 
-module.exports = {
-    cache,
-    clearCache,
-    clearCacheKey
-};
+module.exports = { cache, clearCache, clearCacheKey };
