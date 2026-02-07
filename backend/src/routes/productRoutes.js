@@ -1,15 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { body, param, query } = require('express-validator');
+const {body, param, query} = require('express-validator');
 const productController = require('../controllers/productController');
-const { authenticateToken, isAdmin, isAdminOrAdvanced } = require('../middleware/auth');
+const {authenticateToken, isAdmin, isAdminOrAdvanced} = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const {cache} = require('../middleware/cache');
 
 const createProductValidation = [
     body('name').trim().notEmpty().withMessage('Product name is required'),
     body('description').optional().trim(),
-    body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-    body('quantity').isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer'),
+    body('price').isFloat({min: 0}).withMessage('Price must be a positive number'),
+    body('quantity').isInt({min: 0}).withMessage('Quantity must be a non-negative integer'),
     body('category_id').optional().isInt().withMessage('Invalid category ID'),
     body('brand_id').optional().isInt().withMessage('Invalid brand ID'),
     body('gender_id').optional().isInt().withMessage('Invalid gender ID'),
@@ -22,8 +23,8 @@ const updateProductValidation = [
     param('id').isInt().withMessage('Invalid product ID'),
     body('name').optional().trim().notEmpty().withMessage('Product name cannot be empty'),
     body('description').optional().trim(),
-    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-    body('quantity').optional().isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer'),
+    body('price').optional().isFloat({min: 0}).withMessage('Price must be a positive number'),
+    body('quantity').optional().isInt({min: 0}).withMessage('Quantity must be a non-negative integer'),
     body('category_id').optional().isInt().withMessage('Invalid category ID'),
     body('brand_id').optional().isInt().withMessage('Invalid brand ID'),
     body('gender_id').optional().isInt().withMessage('Invalid gender ID'),
@@ -35,7 +36,7 @@ const updateProductValidation = [
 
 const updateStockValidation = [
     param('id').isInt().withMessage('Invalid product ID'),
-    body('quantity').isInt({ min: 0 }).withMessage('Quantity must be a non-negative integer')
+    body('quantity').isInt({min: 0}).withMessage('Quantity must be a non-negative integer')
 ];
 
 /**
@@ -88,7 +89,7 @@ const updateStockValidation = [
  *                 _links:
  *                   $ref: '#/components/schemas/Links'
  */
-router.get('/', productController.getAllProducts);
+router.get('/', cache(300), productController.getAllProducts);
 
 /**
  * @swagger
@@ -172,7 +173,7 @@ router.get('/', productController.getAllProducts);
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get('/search', productController.searchProducts);
+router.get('/search', cache(180), productController.searchProducts);
 
 /**
  * @swagger
@@ -206,7 +207,7 @@ router.get('/search', productController.searchProducts);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', productController.getProductById);
+router.get('/:id', cache(600), productController.getProductById);
 
 /**
  * @swagger
@@ -224,7 +225,7 @@ router.get('/:id', productController.getProductById);
  *       200:
  *         description: Product quantity information
  */
-router.get('/:id/quantity', productController.getProductQuantity);
+router.get('/:id/quantity', cache(120), productController.getProductQuantity);
 
 /**
  * @swagger

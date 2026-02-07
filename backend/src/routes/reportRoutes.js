@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/reportController');
-const { authenticateToken, isAdminOrAdvanced } = require('../middleware/auth');
+const {authenticateToken, isAdminOrAdvanced} = require('../middleware/auth');
+const {cache} = require('../middleware/cache');
 
 /**
  * @swagger
@@ -47,7 +48,7 @@ const { authenticateToken, isAdminOrAdvanced } = require('../middleware/auth');
  *                     total_earnings:
  *                       type: number
  */
-router.get('/earnings/daily', authenticateToken, isAdminOrAdvanced, reportController.getDailyEarnings);
+router.get('/earnings/daily', authenticateToken, isAdminOrAdvanced, cache(300), reportController.getDailyEarnings);
 
 /**
  * @swagger
@@ -74,7 +75,7 @@ router.get('/earnings/daily', authenticateToken, isAdminOrAdvanced, reportContro
  *       200:
  *         description: Monthly earnings report
  */
-router.get('/earnings/monthly', authenticateToken, isAdminOrAdvanced, reportController.getMonthlyEarnings);
+router.get('/earnings/monthly', authenticateToken, isAdminOrAdvanced, cache(600), reportController.getMonthlyEarnings);
 
 /**
  * @swagger
@@ -103,7 +104,7 @@ router.get('/earnings/monthly', authenticateToken, isAdminOrAdvanced, reportCont
  *       200:
  *         description: Earnings by date range with daily breakdown
  */
-router.get('/earnings/range', authenticateToken, isAdminOrAdvanced, reportController.getEarningsByDateRange);
+router.get('/earnings/range', authenticateToken, isAdminOrAdvanced, cache(300), reportController.getEarningsByDateRange);
 
 /**
  * @swagger
@@ -124,7 +125,7 @@ router.get('/earnings/range', authenticateToken, isAdminOrAdvanced, reportContro
  *       200:
  *         description: Top selling products
  */
-router.get('/products/top-selling', authenticateToken, isAdminOrAdvanced, reportController.getTopSellingProducts);
+router.get('/products/top-selling', authenticateToken, isAdminOrAdvanced, cache(600), reportController.getTopSellingProducts);
 
 /**
  * @swagger
@@ -138,7 +139,7 @@ router.get('/products/top-selling', authenticateToken, isAdminOrAdvanced, report
  *       200:
  *         description: Sales breakdown by category
  */
-router.get('/sales/category', authenticateToken, isAdminOrAdvanced, reportController.getSalesByCategory);
+router.get('/sales/category', authenticateToken, isAdminOrAdvanced, cache(600), reportController.getSalesByCategory);
 
 /**
  * @swagger
@@ -152,7 +153,7 @@ router.get('/sales/category', authenticateToken, isAdminOrAdvanced, reportContro
  *       200:
  *         description: Sales breakdown by brand
  */
-router.get('/sales/brand', authenticateToken, isAdminOrAdvanced, reportController.getSalesByBrand);
+router.get('/sales/brand', authenticateToken, isAdminOrAdvanced, cache(600), reportController.getSalesByBrand);
 
 /**
  * @swagger
@@ -173,7 +174,7 @@ router.get('/sales/brand', authenticateToken, isAdminOrAdvanced, reportControlle
  *       200:
  *         description: Products with low stock
  */
-router.get('/products/low-stock', authenticateToken, isAdminOrAdvanced, reportController.getLowStockProducts);
+router.get('/products/low-stock', authenticateToken, isAdminOrAdvanced, cache(300), reportController.getLowStockProducts);
 
 /**
  * @swagger
@@ -207,6 +208,6 @@ router.get('/products/low-stock', authenticateToken, isAdminOrAdvanced, reportCo
  *                     order_status_breakdown:
  *                       type: array
  */
-router.get('/revenue/summary', authenticateToken, isAdminOrAdvanced, reportController.getRevenueSummary);
+router.get('/revenue/summary', authenticateToken, isAdminOrAdvanced, cache(300), reportController.getRevenueSummary);
 
 module.exports = router;

@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { body, param } = require('express-validator');
+const {body, param} = require('express-validator');
 const orderController = require('../controllers/orderController');
-const { authenticateToken, isAdminOrAdvanced } = require('../middleware/auth');
+const {authenticateToken, isAdminOrAdvanced} = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const {createOrderLimiter} = require('../middleware/rateLimiter');
+const {cache} = require('../middleware/cache');
 
 const createOrderValidation = [
     body('client_id').isInt().withMessage('Invalid client ID'),
-    body('items').isArray({ min: 1 }).withMessage('Order must contain at least one item'),
+    body('items').isArray({min: 1}).withMessage('Order must contain at least one item'),
     body('items.*.product_id').isInt().withMessage('Invalid product ID'),
-    body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+    body('items.*.quantity').isInt({min: 1}).withMessage('Quantity must be at least 1'),
     body('shipping_address').notEmpty().withMessage('Shipping address is required'),
     body('notes').optional().trim()
 ];
@@ -69,7 +71,7 @@ const updateStatusValidation = [
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get('/', authenticateToken, isAdminOrAdvanced, orderController.getAllOrders);
+router.get('/', authenticateToken, isAdminOrAdvanced, cache(60), orderController.getAllOrders);
 
 /**
  * @swagger
@@ -91,7 +93,7 @@ router.get('/', authenticateToken, isAdminOrAdvanced, orderController.getAllOrde
  *       404:
  *         description: Order not found
  */
-router.get('/:id', authenticateToken, param('id').isInt(), validate, orderController.getOrderById);
+router.get('/:id', authenticateToken, cache(120), param('id').isInt(), validate, orderController.getOrderById);
 
 /**
  * @swagger
@@ -121,7 +123,7 @@ router.get('/:id', authenticateToken, param('id').isInt(), validate, orderContro
  *       200:
  *         description: Client orders
  */
-router.get('/client/:clientId', authenticateToken, param('clientId').isInt(), validate, orderController.getOrdersByClient);
+router.get('/client/:clientId', authenticateToken, cache(120), param('clientId').isInt(), validate, orderController.getOrdersByClient);
 
 /**
  * @swagger
@@ -173,7 +175,7 @@ router.get('/client/:clientId', authenticateToken, param('clientId').isInt(), va
  *       400:
  *         description: Insufficient stock or validation error
  */
-router.post('/', authenticateToken, createOrderValidation, validate, orderController.createOrder);
+router.post('/', authenticateToken, createOrderLimiter, createOrderValidation, validate, orderController.createOrder);
 
 /**
  * @swagger

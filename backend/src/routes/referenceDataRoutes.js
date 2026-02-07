@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { body, param } = require('express-validator');
+const {body, param} = require('express-validator');
 const refDataController = require('../controllers/referenceDataController');
-const { authenticateToken, isAdmin } = require('../middleware/auth');
+const {authenticateToken, isAdmin} = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const {cache} = require('../middleware/cache');
 
 /**
  * @swagger
@@ -33,7 +34,7 @@ const validate = require('../middleware/validate');
  *                   items:
  *                     $ref: '#/components/schemas/Category'
  */
-router.get('/categories', refDataController.getAllCategories);
+router.get('/categories', cache(1800), refDataController.getAllCategories);
 
 /**
  * @swagger
@@ -122,7 +123,7 @@ router.delete('/categories/:id', authenticateToken, isAdmin, param('id').isInt()
  *       200:
  *         description: List of brands
  */
-router.get('/brands', refDataController.getAllBrands);
+router.get('/brands', cache(1800), refDataController.getAllBrands);
 
 /**
  * @swagger
@@ -201,7 +202,7 @@ router.delete('/brands/:id', authenticateToken, isAdmin, param('id').isInt(), va
  *       200:
  *         description: List of colors
  */
-router.get('/colors', refDataController.getAllColors);
+router.get('/colors', cache(1800), refDataController.getAllColors);
 
 /**
  * @swagger
@@ -281,7 +282,7 @@ router.delete('/colors/:id', authenticateToken, isAdmin, param('id').isInt(), va
  *       200:
  *         description: List of sizes
  */
-router.get('/sizes', refDataController.getAllSizes);
+router.get('/sizes', cache(1800), refDataController.getAllSizes);
 
 /**
  * @swagger
@@ -363,7 +364,7 @@ router.delete('/sizes/:id', authenticateToken, isAdmin, param('id').isInt(), val
  *       200:
  *         description: List of genders
  */
-router.get('/genders', refDataController.getAllGenders);
+router.get('/genders', cache(1800), refDataController.getAllGenders);
 
 /**
  * @swagger
