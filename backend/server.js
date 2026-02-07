@@ -8,6 +8,7 @@ const {errorHandler} = require('./src/middleware/errorHandler');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocs = require('./src/config/swagger');
 const {connectRedis} = require('./src/config/redis');
+const {connectElasticsearch} = require('./src/config/elasticsearch');
 const {apiLimiter, speedLimiter, graphqlLimiter} = require('./src/middleware/rateLimiter');
 
 const logger = require('./src/config/logger');
@@ -81,6 +82,7 @@ const referenceDataRoutes = require("./src/routes/referenceDataRoutes");
 const clientRoutes = require("./src/routes/clientRoutes");
 const userRoutes = require("./src/routes/userRoutes");
 const cacheRoutes = require("./src/routes/cacheRoutes");
+const searchRoutes = require("./src/routes/searchRoutes");
 
 const PORT = process.env.PORT || 3000;
 
@@ -89,6 +91,7 @@ const httpServer = http.createServer(app);
 const startServer = async () => {
     try {
         await connectRedis();
+        await connectElasticsearch();
 
         const {createApolloServer, context} = require('./src/graphql/server');
         const {expressMiddleware} = require('@apollo/server/express4');
@@ -108,6 +111,7 @@ const startServer = async () => {
         app.use("/api/v1/clients", clientRoutes);
         app.use("/api/v1/users", userRoutes);
         app.use("/api/v1/cache", cacheRoutes);
+        app.use("/api/v1/search", searchRoutes);
 
         // Old routes for backward compatibility
         app.use("/api/auth", authRoutes);
@@ -119,6 +123,7 @@ const startServer = async () => {
         app.use("/api/clients", clientRoutes);
         app.use("/api/users", userRoutes);
         app.use("/api/cache", cacheRoutes);
+        app.use("/api/search", searchRoutes);
 
         app.use(
             '/graphql',
@@ -139,7 +144,8 @@ const startServer = async () => {
                     prometheus: "http://localhost:9090",
                     grafana: "http://localhost:3001 (admin/admin123)",
                     kong_admin: "http://localhost:8001",
-                    kong_proxy: "http://localhost:8000"
+                    kong_proxy: "http://localhost:8000",
+                    elasticsearch: "http://localhost:9200"
                 },
                 endpoints: {
                     v1: "/api/v1",
@@ -152,6 +158,7 @@ const startServer = async () => {
                     clients: "/api/v1/clients",
                     users: "/api/v1/users",
                     cache: "/api/v1/cache",
+                    search: "/api/v1/search"
                 },
             });
         });
@@ -176,11 +183,13 @@ const startServer = async () => {
             console.log(`📌 GraphQL Subscriptions: ws://localhost:${PORT}/graphql`);
             console.log(`📊 Prometheus Metrics: http://localhost:${PORT}/metrics`);
             console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+            console.log(`🔍 Search API: http://localhost:${PORT}/api/v1/search`);
             console.log(`\n🎯 Monitoring Stack:`);
             console.log(`   Prometheus: http://localhost:9090`);
             console.log(`   Grafana: http://localhost:3001 (admin/admin123)`);
             console.log(`   Kong Admin: http://localhost:8001`);
             console.log(`   Kong Proxy: http://localhost:8000`);
+            console.log(`   Elasticsearch: http://localhost:9200`);
         });
     } catch (error) {
         logger.error('Failed to start server', {error: error.message, stack: error.stack});
@@ -191,7 +200,6 @@ const startServer = async () => {
 
 startServer();
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
     logger.info('SIGTERM signal received: closing HTTP server');
     httpServer.close(() => {
