@@ -1,5 +1,6 @@
 const {ApolloServer} = require('@apollo/server');
 const {ApolloServerPluginDrainHttpServer} = require('@apollo/server/plugin/drainHttpServer');
+const {ApolloServerPluginLandingPageLocalDefault} = require('@apollo/server/plugin/landingPage/default');
 const {makeExecutableSchema} = require('@graphql-tools/schema');
 const {WebSocketServer} = require('ws');
 const {useServer} = require('graphql-ws/lib/use/ws');
@@ -7,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const typeDefs = require('./schema');
 const resolvers = require('./resolvers');
-const { GraphQLCustomError } = require('./errors');
+const {GraphQLCustomError} = require('./errors');
 
 const getUser = async (token) => {
     if (!token) return null;
@@ -55,8 +56,10 @@ const createApolloServer = async (httpServer) => {
 
     const server = new ApolloServer({
         schema,
+        introspection: true, // Enable introspection in all environments
         plugins: [
             ApolloServerPluginDrainHttpServer({httpServer}),
+            ApolloServerPluginLandingPageLocalDefault({embed: true}),
             {
                 async serverWillStart() {
                     return {

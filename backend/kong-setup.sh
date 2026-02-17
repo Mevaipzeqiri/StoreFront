@@ -5,7 +5,7 @@ echo "  Kong API Gateway Setup"
 echo "================================"
 
 KONG_ADMIN="http://localhost:8001"
-BACKEND_URL="http://host.docker.internal:3000"
+BACKEND_URL="http://backend:3000"
 
 echo "Waiting for Kong to be ready..."
 until curl -s ${KONG_ADMIN}/status > /dev/null; do
@@ -74,5 +74,5 @@ echo ""
 echo "Access your API through Kong:"
 echo "  http://localhost:8000/api/v1/products"
 echo ""
-echo "Test backend connectivity:"
-echo "  curl http://host.docker.internal:3000/api/v1/products"
+echo "Test backend connectivity (from host):"
+echo "  curl http://localhost:3000/api/v1/products"
